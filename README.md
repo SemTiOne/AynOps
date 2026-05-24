@@ -1,6 +1,6 @@
 # 🔐 CyberSecurity MCP Server
 
-A **Model Context Protocol (MCP) server** that gives Claude real-time cybersecurity reconnaissance capabilities. Instead of manually running 6 different tools across different terminals, just tell Claude **"analyze google.com"** and get a complete security recon report — including a professionally generated PDF.
+A **Model Context Protocol (MCP) server** that gives Claude real-time cybersecurity reconnaissance capabilities. Instead of manually running tools across different terminals, just tell Claude **"analyze google.com"** and get a complete security breakdown instantly.
 
 Built with [FastMCP](https://github.com/jlowin/fastmcp) and Python.
 
@@ -8,9 +8,11 @@ Built with [FastMCP](https://github.com/jlowin/fastmcp) and Python.
 
 ## 🎯 What is this?
 
-Claude by default has no cybersecurity capabilities. This MCP server extends Claude with **6 real-world security tools** that run live against any domain — giving Claude the ability to perform reconnaissance that would normally require multiple specialized tools and significant manual effort.
+Claude by default has **zero native cybersecurity tooling**. No WHOIS. No DNS enumeration. No port scanning. No SSL inspection.
 
-This is a **local MCP server** — it runs on your machine and connects to Claude Desktop. Your data never leaves your computer.
+This MCP server fixes that — extending Claude with **8 real-world security tools** that run live against any domain or IP. Reconnaissance that normally requires multiple specialized tools and 20+ minutes of manual work becomes a single prompt.
+
+This is a **local MCP server** — it runs entirely on your machine. Your data never leaves your computer.
 
 ---
 
@@ -18,45 +20,44 @@ This is a **local MCP server** — it runs on your machine and connects to Claud
 
 | Tool | Description |
 |---|---|
-| `whois_lookup` | Query domain registration data — owner, registrar, creation date, expiry, name servers |
-| `dns_enumeration` | Enumerate A, AAAA, MX, NS, TXT, CNAME, SOA records + brute-force common subdomains |
-| `port_scan` | Nmap-powered port scanner with service/version detection and security warnings |
-| `ssl_inspect` | Inspect SSL/TLS certificate — issuer, expiry, cipher strength, SANs, TLS version |
-| `tech_stack_detect` | Fingerprint web server, CMS, JS frameworks, CDN, analytics, and security headers |
-| `cve_lookup` | Search the NVD database for known CVEs affecting a software name and version |
-| `ip_reputation` | Check whether an IP address has AbuseIPDB abuse reports |
-| `full_recon` | Orchestrates all 5 tools in parallel and returns combined results for Claude to analyze |
+| `whois_lookup` | Domain registration data — owner, registrar, creation date, expiry, name servers |
+| `dns_enumeration` | A, AAAA, MX, NS, TXT, CNAME, SOA records + common subdomain brute-forcing |
+| `port_scan` | Nmap-powered scanner with service/version detection and security warnings |
+| `ssl_inspect` | SSL/TLS certificate — issuer, expiry, cipher strength, SANs, TLS version |
+| `tech_stack_detect` | Web server, CMS, JS frameworks, CDN, analytics, and security header scoring |
+| `cve_lookup` | Search NVD for known CVEs by software name and version (no API key required) |
+| `ip_reputation` | Check if an IP is flagged as malicious via AbuseIPDB |
+| `full_recon` | Runs all 5 core tools in parallel and returns combined results for Claude to analyze |
 
 ---
 
 ## 📸 Demo
 
-### Single tool — WHOIS lookup
+### Single tool — CVE lookup
 ```
-You: Do a WHOIS lookup on github.com and tell me what you find
+You: Look up CVEs for apache 2.4.49
 
-Claude: [calls whois_lookup] GitHub.com is registered through MarkMonitor Inc., 
-one of the world's largest domain registrars specializing in brand protection. 
-The domain was created in 2007 and is secured until 2026...
+Claude: Found 2 critical CVEs for Apache 2.4.49:
+        CVE-2021-41773 (Score: 9.8 CRITICAL) — Path traversal vulnerability
+        allowing remote code execution if CGI is enabled. Actively exploited
+        in the wild...
 ```
 
 ### Full recon
 ```
-You: Do a complete security recon on reddit.com and generate a PDF report
+You: Do a complete security recon on reddit.com
 
-Claude: [calls full_recon → runs 5 tools in parallel → writes summaries → final output]
+Claude: [calls full_recon → runs 5 tools in parallel → delivers full analysis]
 ```
 
 ---
 
 ## 📋 Prerequisites
 
-Before installing, make sure you have:
-
-- **Python 3.10+** — [download here](https://www.python.org/downloads/)
-- **Claude Desktop** — [download here](https://claude.ai/download)
-- **Nmap** — required for port scanning only ([download here](https://nmap.org/download.html))
-- **Git** — [download here](https://git-scm.com/)
+- **Python 3.10+** — [download](https://www.python.org/downloads/)
+- **Claude Desktop** — [download](https://claude.ai/download)
+- **Nmap** — required for port scanning ([download](https://nmap.org/download.html))
+- **Git** — [download](https://git-scm.com/)
 
 ---
 
@@ -65,33 +66,40 @@ Before installing, make sure you have:
 ### Step 1 — Clone the repository
 
 ```bash
-git clone https://github.com/gaoharimran29-glitch/Cybersecurity-MCP-Server
-cd cybersecurity-mcp-server
+git clone https://github.com/gaoharimran29-glitch/Cybersecurity-MCP-Server.git
+cd Cybersecurity-MCP-Server
+```
+
+### Step 2 — Create a virtual environment
+
+**Windows:**
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+**Mac/Linux:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
 ### Step 3 — Install Python dependencies
 
 ```bash
-pip install fastmcp python-whois dnspython requests python-nmap
-```
-
-Or install from requirements.txt:
-```bash
 pip install -r requirements.txt
 ```
 
-### Step 4 — Install Nmap (for port scanning)
+### Step 4 — Install Nmap
 
 **Windows:**
-1. Download the installer from [nmap.org/download.html](https://nmap.org/download.html)
-2. Run the installer
-3. Manually add Nmap to PATH:
+1. Download from [nmap.org/download.html](https://nmap.org/download.html) and run the installer
+2. Manually add Nmap to PATH:
    - Press `Win + S` → search **"Environment Variables"**
-   - Click **"Edit the system environment variables"**
    - Under **System Variables** → find **Path** → click **Edit**
    - Click **New** → add `C:\Program Files (x86)\Nmap`
    - Click OK on all windows
-4. Restart your terminal and verify:
+3. Restart your terminal and verify:
 ```powershell
 nmap --version
 ```
@@ -110,36 +118,58 @@ sudo apt install nmap
 
 Open your Claude Desktop config file:
 
-**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-**Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+| OS | Path |
+|---|---|
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Mac | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
 
 Add this configuration:
 
+**Windows:**
 ```json
 {
   "mcpServers": {
     "cybersecurity": {
-      "command": "python",
-      "args": ["C:\\full\\path\\to\\cybersecurity-mcp-server\\main.py"]
+      "command": "C:\\full\\path\\to\\Cybersecurity-MCP-Server\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\full\\path\\to\\Cybersecurity-MCP-Server\\main.py"],
+      "env": {
+        "ABUSEIPDB_API_KEY": "your-api-key-here"
+      }
     }
   }
 }
 ```
 
-> ⚠️ Replace the path with the actual full path to `main.py` on your machine.
-> Replace the python with actual python file path of venv or python.
-> On Windows use double backslashes `\\` in the path.
+**Mac/Linux:**
+```json
+{
+  "mcpServers": {
+    "cybersecurity": {
+      "command": "/full/path/to/Cybersecurity-MCP-Server/.venv/bin/python3",
+      "args": ["/full/path/to/Cybersecurity-MCP-Server/main.py"],
+      "env": {
+        "ABUSEIPDB_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+> ⚠️ Always use the **full absolute path** to your `.venv` Python executable — not just `python` or `python3`. Claude Desktop may use a different Python installation otherwise.
+
+> **Note:** `ABUSEIPDB_API_KEY` is only required for the `ip_reputation` tool. All other 7 tools work without it. Get a free key at [abuseipdb.com](https://www.abuseipdb.com) (free tier: 1,000 requests/day).
 
 ### Step 6 — Restart Claude Desktop
 
-Fully quit and reopen Claude Desktop. You should see a 🔌 icon indicating MCP tools are connected.
+Fully quit and reopen Claude Desktop — closing the window is not enough. Check the system tray and quit from there.
 
-To verify, ask Claude:
+Verify tools are connected by asking Claude:
 ```
 What cybersecurity tools do you have available?
 ```
 
-Claude should list all 6 tools.
+Claude should list all 8 tools.
 
 ---
 
@@ -149,25 +179,22 @@ Claude should list all 6 tools.
 
 ```
 Do a WHOIS lookup on example.com
-Run DNS enumeration on github.com  
+Run DNS enumeration on github.com
 Scan ports on scanme.nmap.org
 Inspect the SSL certificate of stripe.com
 Detect the tech stack of wordpress.org
 Look up CVEs for apache 2.4.49
+Look up CVEs for log4j 2.14.1
 Check the reputation of IP 1.2.3.4
 ```
 
-> `ip_reputation` requires an AbuseIPDB API key in the `ABUSEIPDB_API_KEY` environment variable.
-
 ### Port scan types
-
-The `port_scan` tool supports 5 scan types:
 
 | Type | Description | Speed |
 |---|---|---|
 | `basic` | Top 100 ports | Fast (~5s) |
 | `service` | Service & version detection | Medium (~15s) |
-| `os` | OS detection (needs admin) | Medium |
+| `os` | OS detection (requires admin) | Medium |
 | `full` | All 65535 ports | Slow (~5min) |
 | `vuln` | Vulnerability scripts | Slow (~30s) |
 
@@ -181,31 +208,48 @@ Scan scanme.nmap.org with service detection
 Do a complete security recon on reddit.com
 ```
 
-Claude will:
-1. Run all 5 tools in parallel
-2. Analyze each result
-3. Write a summary for each section
+Claude will run all 5 core tools in parallel and deliver a full security analysis.
 
 ### Follow-up analysis
 
 ```
-Based on the recon report, what are the security risks and what should be fixed first?
-Explain what the open ports mean from an attacker's perspective.
-Is the SSL configuration strong enough for a financial services company?
+Based on the recon, what are the top security risks?
+What do the open ports mean from an attacker's perspective?
+Is this SSL configuration strong enough for a financial services company?
+Cross-reference the open ports with known CVEs for the detected services.
 ```
+
+---
+
+## 🧪 Running Tests
+
+```bash
+python -m unittest test_security_tools.py
+```
+
+Expected output:
+```
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK
+```
+
+Tests mock external APIs so no internet connection or API keys are required.
 
 ---
 
 ## ⚠️ Legal & Ethical Usage
 
-> **Only scan domains you own or have explicit written permission to scan.**
+> **Only scan domains and IPs you own or have explicit written permission to scan.**
 
-- WHOIS, DNS, SSL, and tech stack lookups query **public data** — safe on any domain
-- Port scanning should only be performed on **your own infrastructure** or authorized targets
+- WHOIS, DNS, SSL, CVE, and tech stack lookups use **public data** — safe on any domain
+- Port scanning should only target **your own infrastructure** or authorized systems
 - The only public host officially permitted for Nmap testing is `scanme.nmap.org`
 - Unauthorized port scanning may be illegal in your jurisdiction
 
-This tool is intended for:
+Intended for:
 - Security researchers
 - Penetration testers (on authorized targets)
 - Developers auditing their own infrastructure
@@ -216,18 +260,31 @@ This tool is intended for:
 ## 🗂️ Project Structure
 
 ```
-cybersecurity-mcp-server/
-├── main.py              # MCP server — all 6 tools
-├── requirements.txt     # Python dependencies
-├── README.md            # This file
+Cybersecurity-MCP-Server/
+├── main.py                  # MCP server — all 8 tools
+├── test_security_tools.py   # Unit tests with mocked APIs
+├── requirements.txt         # Python dependencies
+├── Dockerfile               # For Glama verification
+├── contributing.md          # Contribution guide
+└── README.md                # This file
 ```
 
 ---
 
+## 🔭 Roadmap
+
+- [ ] Shodan integration — internet-wide device and service search
+- [ ] Certificate transparency search — find subdomains via cert logs
+- [ ] HTTP security headers deep analyzer
+- [ ] Phishing domain detector
+- [ ] Multi-domain batch scanning
+- [ ] PDF report generation
+
+---
 
 ## 🤝 Contributing
 
-Pull requests are welcome. For major changes, open an issue first to discuss what you'd like to change.
+Pull requests are welcome! Check [contributing.md](contributing.md) for guidelines and a list of open issues ready to pick up.
 
 ---
 
@@ -239,9 +296,9 @@ MIT License — free to use, modify, and distribute.
 
 ## 👤 Author
 
-Built by **[Gaohar Imran]**
+Built by **Gaohar Imran**
 - GitHub: [@gaoharimran29-glitch](https://github.com/gaoharimran29-glitch)
-- LinkedIn: [GaoharImran](https://www.linkedin.com/in/gaohar-imran-5a4063379/)
+- LinkedIn: [Gaohar Imran](https://www.linkedin.com/in/gaohar-imran-5a4063379/)
 
 ---
 
