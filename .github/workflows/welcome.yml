@@ -20,12 +20,14 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `👋 Thanks for opening this issue!
-
-Please ensure you have:
-- Checked existing issues
-- Provided reproduction steps
-- Included logs/screenshots if applicable
-
-A maintainer will review it soon.`
+              body: [
+                "👋 Thanks for opening this issue!",
+                "",
+                "Please ensure you have:",
+                "- Checked existing issues",
+                "- Provided reproduction steps",
+                "- Included logs/screenshots if applicable",
+                "",
+                "A maintainer will review it soon."
+              ].join("\n")
             })
