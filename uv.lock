@@ -332,7 +332,7 @@ requires-dist = [
     { name = "dnspython", specifier = ">=2.8.0" },
     { name = "fastmcp", specifier = ">=3.3.1" },
     { name = "pip", specifier = ">=26.1.2" },
-    { name = "pytest", specifier = ">=9.0.3" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "python-nmap", specifier = ">=0.7.1" },
     { name = "python-whois", specifier = ">=0.9.6" },
     { name = "reportlab", specifier = ">=4.5.1" },
