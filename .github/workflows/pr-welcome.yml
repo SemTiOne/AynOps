@@ -1,32 +1,38 @@
 name: Welcome Pull Requests
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
 
 jobs:
   welcome:
     runs-on: ubuntu-latest
 
-    permissions:
-      pull-requests: write
-
     steps:
-      - name: Comment on PR
+      - name: Welcome first-time contributors
         uses: actions/github-script@v8
         with:
           script: |
+            const pr = context.payload.pull_request;
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: [
-                "🎉 Thanks for your contribution!",
-                "",
-                "Checklist:",
-                "- [ ] Documentation updated",
-                "- [ ] No secrets included",
-                "- [ ] requirements.txt updated (if applicable)",
-                "- [ ] .env.example updated (if applicable)"
-              ].join("\n")
-            })
+              issue_number: pr.number,
+              body: `🎉 Thanks for your contribution to AynOps!
+
+Hello @${pr.user.login}, thank you for opening this pull request. We appreciate your effort in improving the project.
+
+Before requesting a review, please ensure that:
+
+- [ ] Documentation has been updated (if applicable)
+- [ ] No secrets or sensitive information have been committed
+- [ ] Dependencies have been updated appropriately (if applicable)
+- [ ] \`.env.example\` has been updated (if applicable)
+
+A maintainer will review your contribution soon. Thanks again for being a part of the AynOps community! 🚀`
+            });
