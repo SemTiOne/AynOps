@@ -139,6 +139,17 @@ class TestTraceRedirects(unittest.TestCase):
         priv = [i for i in result["issues_found"] if i["type"] == "private_ip_leak"]
         self.assertEqual(len(priv), 1)
         self.assertEqual(priv[0]["severity"], "high")
+        self.assertNotIn("No private IP redirects detected", result["security_notes"])
+
+    @patch("tools.redirect_tracer.requests.Session.get")
+    def test_security_note_wording_matches_what_is_actually_checked(self, mock_get):
+        """The note only reflects the literal-private-IP check, it must
+        not claim "hostnames" in general were checked. This tool does
+        not resolve or inspect hostnames, per _hostname_is_private_ip's
+        own docstring."""
+        mock_get.return_value = _resp(200)
+        result = trace_redirects("http://example.com")
+        self.assertIn("No private IP redirects detected", result["security_notes"])
         self.assertNotIn("No internal hostnames leaked in chain", result["security_notes"])
 
     @patch("tools.redirect_tracer.requests.Session.get")
@@ -156,6 +167,10 @@ class TestTraceRedirects(unittest.TestCase):
         self.assertEqual(mock_get.call_count, 1)
         self.assertEqual(result["total_hops"], 1)
         self.assertEqual(result["chain"][0]["redirect_to"], "http://169.254.169.254/latest/meta-data/")
+        self.assertEqual(
+            result["final_url"], "http://169.254.169.254/latest/meta-data/",
+            "final_url should report the discovered-but-unfetched target, not the last page actually fetched"
+        )
         priv = [i for i in result["issues_found"] if i["type"] == "private_ip_leak"]
         self.assertEqual(len(priv), 1)
 
@@ -335,6 +350,11 @@ class TestTraceRedirects(unittest.TestCase):
         self.assertLessEqual(mock_get.call_count, 15)
         max_hops = [i for i in result["issues_found"] if i["type"] == "max_hops_exceeded"]
         self.assertEqual(len(max_hops), 1)
+        self.assertEqual(
+            result["final_url"], "http://example.com/page14",
+            "final_url should be the destination discovered on the capped-off 15th hop, "
+            "not the URL of the 15th hop itself"
+        )
 
     def test_max_hops_exceeded_hop_number_matches_chain_length(self):
         """The hop reference on this issue must equal len(chain), not a

@@ -221,7 +221,11 @@ def trace_redirects(url: str) -> dict:
             "description": f"Chain has {total_hops} hops, longer than the recommended {_LONG_CHAIN_THRESHOLD} (SEO/performance impact)",
         })
 
-    final_url = chain[-1]["url"] if chain else original_url
+    # If the last hop discovered a further destination but the tracer
+    # stopped before fetching it (private-IP halt, redirect loop, or
+    # hitting the hop cap mid-redirect), that discovered destination is
+    # the true final URL, not just the last URL actually fetched.
+    final_url = (chain[-1].get("redirect_to") or chain[-1]["url"]) if chain else original_url
 
     security_notes = []
     has_downgrade = any(i["type"] == "tls_downgrade" for i in issues_found)
@@ -232,7 +236,7 @@ def trace_redirects(url: str) -> dict:
         elif original_url.startswith("https://"):
             security_notes.append("Chain stayed on HTTPS throughout — good")
     if not any(i["type"] == "private_ip_leak" for i in issues_found):
-        security_notes.append("No internal hostnames leaked in chain")
+        security_notes.append("No private IP redirects detected")
 
     return {
         "success": True,
