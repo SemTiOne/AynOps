@@ -4,7 +4,6 @@ from utils.helpers import is_valid_domain
 
 WHOIS_TIMEOUT_SECONDS = 10
 
-
 def whois_lookup(domain: str) -> dict:
     """Perform WHOIS lookup for a domain."""
     try:
@@ -14,14 +13,20 @@ def whois_lookup(domain: str) -> dict:
         result = whois.whois(domain, timeout=WHOIS_TIMEOUT_SECONDS)
 
         def safe_date(d):
+            """Convert datetime objects or lists of datetimes to strings."""
             if d is None:
                 return None
-            return str(d[0] if isinstance(d, list) else d)
+            
+            if isinstance(d , list):
+                return [str(item) for item in d]
 
+            return str(d)
+        
         return {
             "success": True,
-            "domain": domain,
+            "domain": result.domain_name,
             "registrar": result.registrar,
+            "registrar_url": result.registrar_url ,
             "whois_server": result.whois_server,
             "creation_date": safe_date(result.creation_date),
             "expiration_date": safe_date(result.expiration_date),

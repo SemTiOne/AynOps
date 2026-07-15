@@ -7,6 +7,7 @@ class TestWhoisLookup(unittest.TestCase):
 
     def _mock_whois_result(self):
         m = MagicMock()
+        m.domain_name = "example.com"
         m.registrar = "Example Registrar LLC"
         m.whois_server = "whois.example.com"
         m.creation_date = "2010-01-01"
@@ -39,7 +40,7 @@ class TestWhoisLookup(unittest.TestCase):
         result = whois_lookup("example.com")
 
         self.assertTrue(result["success"])
-        self.assertEqual(result["creation_date"], "2010-01-01")  # first item taken
+        self.assertEqual(result["creation_date"], ["2010-01-01", "2010-01-02"])
 
     def test_whois_invalid_domain(self):
         result = whois_lookup("not-a-domain")
