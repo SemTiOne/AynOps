@@ -79,6 +79,7 @@ Run the tests:
 ```bash
 pytest tests/test_my_tool.py -v
 ```
+
 All tests should pass without any warning or error.
 
 Every new tool must include at least:
@@ -107,15 +108,15 @@ Verify that:
 
 ### 5. Update Documentation & `mcp.json`
 
-- Add the tool to the tools table in `README.md`
+- Add the tool to the relevant tools-table in `README.md`
 - Add the relevant info in `mcp.json`
 - If the tool requires an API key, document how to obtain and configure it in the README & mcp.json
 
 ---
 
-### 6. Update `.env.example` and `requirements.txt` (If Applicable)
+### 6. Update `.env.example` , `requirements.txt` and `uv.lock` (If Applicable)
 
-If your tool requires new environment variables, add them to `.env.example` with placeholder values:
+If your tool requires new environment variables, add them to `.env.example` & server.json with placeholder values:
 
 ```env
 SHODAN_API_KEY=your_api_key_here
@@ -250,14 +251,14 @@ pytest tests/ -v
 
 ## Guidelines
 
-| Rule | Detail |
-|---|---|
-| **Consistency** | Every tool returns `{"success": True/False, ...}` |
-| **Validation** | Always validate inputs before making external calls |
-| **Error handling** | Catch exceptions and return `{"success": False, "error": str(e)}` |
-| **Dependencies** | Check if a library is already used before adding a new one |
-| **Legal** | Use `scanme.nmap.org` for port scanning tests — the only public host officially permitted for Nmap testing |
-| **API keys** | Never hardcode keys; always use `os.getenv("YOUR_API_KEY")` |
+| Rule               | Detail                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| **Consistency**    | Every tool returns `{"success": True/False, ...}`                                                          |
+| **Validation**     | Always validate inputs before making external calls                                                        |
+| **Error handling** | Catch exceptions and return `{"success": False, "error": str(e)}`                                          |
+| **Dependencies**   | Check if a library is already used before adding a new one                                                 |
+| **Legal**          | Use `scanme.nmap.org` for port scanning tests — the only public host officially permitted for Nmap testing |
+| **API keys**       | Never hardcode keys; always use `os.getenv("YOUR_API_KEY")`                                                |
 
 ---
 
