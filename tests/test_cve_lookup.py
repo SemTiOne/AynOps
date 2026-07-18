@@ -1,5 +1,6 @@
-from unittest.mock import Mock, MagicMock, patch, call
+from unittest.mock import Mock, patch
 import unittest
+import requests
 from tools.cve_tool import cve_lookup, _cve_affects_version
 
 
@@ -73,6 +74,9 @@ class TestCveLookup(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertEqual(result["total_results"], 0)
         self.assertEqual(result["cves"], [])
+        # Stage 1 returned no results → Stage 2 fires → version filtering applied
+        self.assertTrue(result["version_filtering_applied"])
+        self.assertEqual(mock_get.call_count, 2)
 
     def test_cve_lookup_empty_software_rejected(self):
         result = cve_lookup("", "1.0")
@@ -337,6 +341,87 @@ class TestCveLookup(unittest.TestCase):
         }
         # Non-vulnerable matches are ignored, so 1.5.0 is not affected.
         self.assertFalse(_cve_affects_version(cve, "1.5.0"))
+
+    def test_version_start_excluding(self):
+        cve = {
+            "configurations": [
+                {
+                    "nodes": [
+                        {
+                            "cpeMatch": [
+                                {"vulnerable": True, "versionStartExcluding": "1.0.0"}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        self.assertTrue(_cve_affects_version(cve, "1.0.1"))
+        self.assertFalse(_cve_affects_version(cve, "1.0.0"))  # excluded boundary
+
+    def test_version_end_including(self):
+        cve = {
+            "configurations": [
+                {
+                    "nodes": [
+                        {
+                            "cpeMatch": [
+                                {"vulnerable": True, "versionEndIncluding": "2.0.0"}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        self.assertTrue(_cve_affects_version(cve, "2.0.0"))  # included boundary
+        self.assertFalse(_cve_affects_version(cve, "2.0.1"))
+
+    def test_cpe_match_with_no_constraints_matches_any_version(self):
+        # A vulnerable cpeMatch with no version constraints matches any target.
+        cve = {
+            "configurations": [
+                {
+                    "nodes": [
+                        {
+                            "cpeMatch": [{"vulnerable": True}]
+                        }
+                    ]
+                }
+            ]
+        }
+        self.assertTrue(_cve_affects_version(cve, "1.5.0"))
+        self.assertTrue(_cve_affects_version(cve, "99.0.0"))
+
+    def test_invalid_constraint_version_skips_match(self):
+        # An unparseable constraint version (e.g. "*") causes the cpeMatch
+        # to be skipped, so the CVE is reported as not affecting the target.
+        cve = {
+            "configurations": [
+                {
+                    "nodes": [
+                        {
+                            "cpeMatch": [
+                                {
+                                    "vulnerable": True,
+                                    "versionStartIncluding": "*",
+                                    "versionEndIncluding": "2.0.0",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        self.assertFalse(_cve_affects_version(cve, "1.5.0"))
+
+    @patch("tools.cve_tool.requests.get")
+    def test_stage1_http_error_does_not_fall_through_to_stage2(self, mock_get):
+        # If Stage 1 raises an HTTP error, Stage 2 must NOT fire.
+        mock_get.side_effect = requests.exceptions.HTTPError("404 Client Error")
+        result = cve_lookup("apache", "2.4.49")
+        self.assertFalse(result["success"])
+        self.assertIn("NVD API request failed", result["error"])
+        self.assertEqual(mock_get.call_count, 1)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -56,15 +56,20 @@ def _version_in_range(target: Version, match: dict) -> bool:
 
 
 def _cve_affects_version(cve: dict, target_version: str) -> bool:
-    """Check whether a CVE's CPE version ranges include the target version."""
+    """Check whether a CVE's CPE version ranges include the target version.
+
+    Returns True when the target version falls inside any vulnerable cpeMatch
+    range. CVEs without structured ``configurations`` are excluded because
+    version impact cannot be confirmed.
+    """
     try:
         target = Version(target_version)
     except InvalidVersion:
         # If we can't parse the target version, don't filter (include the CVE).
         return True
-    for configuration in cve.get("configurations", []):
-        for node in configuration.get("nodes", []):
-            for match in node.get("cpeMatch", []):
+    for configuration in cve.get("configurations") or []:
+        for node in configuration.get("nodes") or []:
+            for match in node.get("cpeMatch") or []:
                 if not match.get("vulnerable", False):
                     continue  # Skip non-vulnerable CPE matches
                 if _version_in_range(target, match):
@@ -80,6 +85,9 @@ def cve_lookup(software: str, version: str) -> dict:
       - Stage 1: keyword search with "<software> <version>".
       - Stage 2: fallback keyword search with just "<software>".
       - Stage 3: filter Stage 2 CVEs by parsing cpeMatch version ranges.
+
+    CVEs without structured ``configurations`` are excluded from Stage 2/3
+    results because their version impact cannot be confirmed.
     """
     software = software.strip()
     version = version.strip()
@@ -102,7 +110,8 @@ def cve_lookup(software: str, version: str) -> dict:
         # Stage 2 & 3: broader query + version filtering
         items = _query_nvd(software)
         filtered = [
-            item for item in items if _cve_affects_version(item["cve"], version)
+            item for item in items
+            if _cve_affects_version(item.get("cve", {}), version)
         ]
         return {
             "success": True,
