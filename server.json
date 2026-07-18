@@ -23,13 +23,6 @@
           "isRequired": false,
           "isSecret": true,
           "format": "string"
-        },
-        {
-          "name": "IP_API_KEY",
-          "description": "Required for asn_lookup tool. Get free key at ipapi.com",
-          "isRequired": false,
-          "isSecret": true,
-          "format": "string"
         }
       ]
     }

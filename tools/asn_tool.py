@@ -1,36 +1,21 @@
-import os
 from urllib.parse import urlparse
 import ipaddress
-import requests
 import socket
 
 def asn_lookup(target: str) -> dict:
     """
-    Find the Autonomous System Number (ASN) and 
-    organization for a domain or IP. Useful for 
-    identifying hosting provider and network ownership.
-
-    API Key: https://ipapi.com
+    Find the Autonomous System Number (ASN) and network ownership
+    for a domain or IP using Team Cymru WHOIS. Useful for identifying
+    hosting provider and network ownership. No API key required.
 
     Args:
         target (str): Domain or IP address
 
     Returns:
-        dict: Geolocation and ASN details matching the expected signature
+        dict: ASN and network ownership details
     """
     try:
         target = target.strip()
-        api_key = os.getenv("IP_API_KEY")
-        
-        if not api_key:
-            return {
-                "success": False,
-                "error": (
-                    "IP_API_KEY environment variable is not set. "
-                    "Get a free key at https://ipapi.com and add it to "
-                    "your Claude Desktop config under 'IP_API_KEY'."
-                )
-            }
 
         if "://" in target:
             parsed = urlparse(target)
@@ -47,54 +32,59 @@ def asn_lookup(target: str) -> dict:
         except ValueError:
             ip = socket.getaddrinfo(target, None)[0][4][0]
 
+        query = f"begin\nverbose\n{ip}\nend\n"
+        with socket.create_connection(("whois.cymru.com", 43), timeout=15) as sock:
+            sock.sendall(query.encode())
+            chunks = []
+            while True:
+                chunk = sock.recv(4096)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+            response = b"".join(chunks).decode("utf-8", errors="replace")
 
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json"
-        }
-        response = requests.get(
-            f"https://api.ipapi.com/api/{ip}?access_key={api_key}",
-            timeout=15,
-            headers=headers
-        )
-
-        if response.status_code != 200:
+        lines = [line for line in response.strip().splitlines() if line.strip()]
+        if not lines:
             return {
                 "success": False,
-                "error": f"API request failed with status {response.status_code}"
+                "error": "Unexpected or malformed response from Team Cymru WHOIS",
             }
 
-        data = response.json()
+        data_line = None
+        for line in lines:
+            fields = [f.strip() for f in line.split("|")]
+            if len(fields) >= 7 and fields[0].isdigit():
+                data_line = fields
+                break
 
-        if data.get("success") is False:
-            error_info = data.get("error", {})
+        if not data_line:
             return {
                 "success": False,
-                "error": error_info.get("info", "API returned an error state")
+                "error": "Unexpected or malformed response from Team Cymru WHOIS",
             }
 
-        connection = data.get("connection", {})
-        
-        asn_val = connection.get("asn")
-        if asn_val and not str(asn_val).startswith("AS"):
-            asn_string = f"AS{asn_val}"
-        else:
-            asn_string = str(asn_val) if asn_val else None
+        asn_val = data_line[0]
+        asn_string = f"AS{asn_val}" if not asn_val.startswith("AS") else asn_val
 
         return {
             "success": True,
             "ip": ip,
             "asn": asn_string,
-            "org": connection.get("org"),
-            "isp": connection.get("isp"), 
-            "country": data.get("country_name"),
-            "region": data.get("region_name"),
-            "city": data.get("city")
+            "bgp_prefix": data_line[2],
+            "country": data_line[3],
+            "registry": data_line[4],
+            "allocated": data_line[5],
+            "organization": data_line[6],
         }
 
     except socket.gaierror:
         return {"success": False, "error": "Failed to resolve domain"}
-    except requests.exceptions.Timeout:
-        return {"success": False, "error": "Request timed out"}
+    except socket.timeout:
+        return {"success": False, "error": "Team Cymru WHOIS request timed out"}
+    except (ConnectionError, OSError) as e:
+        return {
+            "success": False,
+            "error": f"Could not connect to Team Cymru WHOIS service: {e}",
+        }
     except Exception as e:
         return {"success": False, "error": str(e)}
