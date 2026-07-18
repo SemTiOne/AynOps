@@ -8,7 +8,6 @@ ip_reputation_extractor (the AbuseIPDB-backed canonical source).
 """
 from tools.signals.asn import asn_extractor
 from tools.signals.ip_reputation import ip_reputation_extractor
-from tools.signals.whois import whois_extractor
 from tools.signals.extractor import extract_signals
 
 
@@ -62,11 +61,28 @@ def test_ip_reputation_extractor_coerces_string_score_to_int():
 
 
 def test_ip_reputation_extractor_defaults_score_to_zero_on_invalid_value():
-    """A missing or non-numeric abuse_confidence_score must fall back to 0."""
+    """A non-numeric abuse_confidence_score must fall back to 0."""
     result = {
         "success": True,
         "is_malicious": False,
         "abuse_confidence_score": "not-a-number",
+    }
+    signals = _base_signals()
+    ip_reputation_extractor(result, signals)
+    assert signals["ip_abuse_score"] == 0
+
+
+def test_ip_reputation_extractor_defaults_score_to_zero_when_key_missing():
+    """A missing abuse_confidence_score key must fall back to 0.
+
+    AbuseIPDB responses normally include the field, but defensive coding
+    requires the extractor to tolerate its absence (int(None) raises
+    TypeError, which the try/except catches).
+    """
+    result = {
+        "success": True,
+        "is_malicious": False,
+        # abuse_confidence_score intentionally omitted
     }
     signals = _base_signals()
     ip_reputation_extractor(result, signals)
