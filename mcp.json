@@ -84,13 +84,11 @@
     },
     {
       "name": "asn_lookup",
-      "description": "Find ASN, ISP, organization and geolocation for any IP or domain",
+      "description": "Find ASN, BGP prefix, organization, registry and country for any IP or domain via Team Cymru WHOIS (no API key required)",
       "input": {
         "target": "string"
       },
-      "requires_api_key": true,
-      "api_key_env": "IP_API_KEY",
-      "api_key_url": "https://ipapi.com/"
+      "requires_api_key": false
     },
     {
       "name": "cve_lookup",
@@ -149,11 +147,6 @@
       "name": "ABUSEIPDB_API_KEY",
       "description": "Required for ip_reputation tool. Get free key at abuseipdb.com",
       "required": false
-    },
-    {
-      "name": "IP_API_KEY",
-      "description": "Required for asn_lookup tool. Get free key at ipapi.com",
-      "required": false
     }
   ],
   "installation": {
@@ -173,8 +166,7 @@
           "C:\\full\\path\\to\\AynOps\\server.py"
         ],
         "env": {
-          "ABUSEIPDB_API_KEY": "your-api-key-here",
-          "IP_API_KEY": "your-api-key-here"
+          "ABUSEIPDB_API_KEY": "your-api-key-here"
         }
       }
     }

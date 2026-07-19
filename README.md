@@ -48,7 +48,7 @@ It is also listed on glama mcp registry.
 | `email_security_check` | Checks SPF, DKIM, and DMARC DNS records — returns a security_score, rating, and actionable recommendations for missing or weak configurations |
 | `tech_stack_detect` | Web server, CMS, JS frameworks, CDN, analytics, and security header scoring |
 | `cert_transparency` | Subdomain discovery via crt.sh Certificate Transparency logs with an automatic fallback to HackerTarget passive DNS on timeouts |
-| `asn_lookup` | Autonomous System Number (ASN) and network ownership lookup — identifies hosting provider, ISP, organization, geolocation, and infrastructure ownership for domains or IP addresses |
+| `asn_lookup` | Autonomous System Number (ASN) and network ownership lookup via Team Cymru WHOIS — identifies ASN, BGP prefix, organization, registry, country, and allocation date for domains or IP addresses (no API key required) |
 | `ip_reputation` | Check if an IP is flagged as malicious via AbuseIPDB (api key requied) |
 | `full_recon` | Runs all core tools in parallel and returns combined result |
 
@@ -180,8 +180,7 @@ Add this configuration:
       "command": "C:\\full\\path\\to\\AynOps\\.venv\\Scripts\\python.exe",
       "args": ["C:\\full\\path\\to\\AynOps\\server.py"],
       "env": {
-        "ABUSEIPDB_API_KEY": "your-api-key-here",
-        "IP_API_KEY": "your-api-key-here"
+        "ABUSEIPDB_API_KEY": "your-api-key-here"
       }
     }
   }
@@ -196,8 +195,7 @@ Add this configuration:
       "command": "/full/path/to/AynOps/.venv/bin/python3",
       "args": ["/full/path/to/AynOps/server.py"],
       "env": {
-        "ABUSEIPDB_API_KEY": "your-api-key-here",
-        "IP_API_KEY": "your-api-key-here"
+        "ABUSEIPDB_API_KEY": "your-api-key-here"
       }
     }
   }
@@ -206,7 +204,7 @@ Add this configuration:
 
 > ⚠️ Always use the **full absolute path** to your `.venv` Python executable — not just `python` or `python3`. Claude Desktop may use a different Python installation otherwise.
 
-> **Note:** `ABUSEIPDB_API_KEY` is only required for the `ip_reputation` tool. Get a free key at [abuseipdb.com](https://www.abuseipdb.com). `IP_API_KEY` is only required for the `asn_lookup` tool. get a free key at [ipapi.com](https://ipapi.com/)
+> **Note:** `ABUSEIPDB_API_KEY` is only required for the `ip_reputation` tool. Get a free key at [abuseipdb.com](https://www.abuseipdb.com).
 
 ### Step 5 — Restart Claude Desktop
 
