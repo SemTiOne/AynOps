@@ -1,5 +1,4 @@
 import requests
-from urllib.parse import urlparse
 from utils.helpers import is_valid_domain
 
 def robots_txt_inspect(domain: str) -> dict:
