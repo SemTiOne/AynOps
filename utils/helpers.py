@@ -21,7 +21,7 @@ def normalize_domain(domain: str | None) -> str:
 
     - strip surrounding whitespace
     - lowercase
-    - remove a single trailing dot (FQDN form)
+    - remove trailing dots (FQDN form)
 
     Returns an empty string when the input is missing/blank after normalization.
     """
