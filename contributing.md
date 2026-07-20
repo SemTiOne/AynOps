@@ -18,13 +18,14 @@ tools/
 Implement your tool using the standard pattern:
 
 ```python
-from utils.helpers import is_valid_domain
+from utils.helpers import is_valid_domain , normalize_domain
 
 def your_tool_name(domain: str) -> dict:
     """
     One clear sentence describing what this tool does.
     """
     try:
+        domain = normalize_domain(domain)
         if not is_valid_domain(domain):
             return {"success": False, "error": "Invalid domain format"}
 
@@ -114,9 +115,9 @@ Verify that:
 
 ---
 
-### 6. Update `.env.example` , `requirements.txt` and `uv.lock` (If Applicable)
+### 6. Update `.env.example` , `requirements.txt` , `server.json` and `uv.lock` (If Applicable)
 
-If your tool requires new environment variables, add them to `.env.example` & server.json with placeholder values:
+If your tool requires new environment variables, add them to `.env.example` & `server.json` with placeholder values:
 
 ```env
 SHODAN_API_KEY=your_api_key_here
@@ -228,9 +229,10 @@ pytest tests/ -v
 5. Add unit test for tool in `tests/`.
 6. Update the tools table in `README.md`
 7. Update the relevant info in `mcp.json`
-8. Update `requirements.txt` if you added a new dependency
-9. Update `.env.example` if your tool needs an API key
-10. Open a pull request with a short description
+8. Update the relevant info in `server.json`
+9. Update `requirements.txt` if you added a new dependency
+10. Update `.env.example` if your tool needs an API key
+11. Open a pull request with a short description
 
 ---
 
@@ -244,6 +246,7 @@ pytest tests/ -v
 - [ ] Dependencies are minimal — reuse existing libraries where possible
 - [ ] Tools table updated in `README.md`
 - [ ] `mcp.json` updated if applicable
+- [ ] `server.json` updated if applicable
 - [ ] `requirements.txt` updated if a new dependency was added
 - [ ] `.env.example` updated if a new API key is required
 
