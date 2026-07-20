@@ -24,6 +24,10 @@ def _base_signals():
         "missing_security_headers": [],
         "email_security": {},
         "ip_reputation_flagged": False,
+        "asn_number": None,
+        "asn_org": None,
+        "asn_ip": None,
+        "asn_country": None,
         "auto_warnings": [],
     }
 
@@ -142,7 +146,6 @@ def test_asn_extractor_does_not_touch_ip_abuse_score():
         "ip": "1.2.3.4",
         "asn": "AS64500",
         "org": "Test Org",
-        "isp": "Test ISP",
         "country": "Testland",
     }
     signals = _base_signals()
@@ -181,7 +184,6 @@ def test_extract_signals_populates_ip_abuse_score_from_ip_reputation():
             "ip": "1.2.3.4",
             "asn": "AS64500",
             "org": "Test Org",
-            "isp": "Test ISP",
             "country": "Testland",
         },
         "ports": {"success": False},
@@ -218,3 +220,32 @@ def test_extract_signals_leaves_ip_abuse_score_at_zero_when_ip_reputation_missin
     }
     signals = extract_signals(results)
     assert signals["ip_abuse_score"] == 0
+
+
+def test_asn_extractor_populates_metadata_signals():
+    """Successful ASN lookups must populate asn_* signal fields."""
+    result = {
+        "success": True,
+        "ip": "1.2.3.4",
+        "asn": "AS64500",
+        "organization": "Example Networks",
+        "country": "US",
+    }
+    signals = _base_signals()
+    asn_extractor(result, signals)
+    assert signals["asn_number"] == "AS64500"
+    assert signals["asn_org"] == "Example Networks"
+    assert signals["asn_ip"] == "1.2.3.4"
+    assert signals["asn_country"] == "US"
+    assert signals["ip_abuse_score"] == 0
+
+def test_asn_extractor_skips_metadata_on_failure():
+    """Failed ASN lookups leave asn_* fields unset."""
+    result = {"success": False, "error": "Failed to resolve domain"}
+    signals = _base_signals()
+    asn_extractor(result, signals)
+    assert signals["asn_number"] is None
+    assert signals["asn_org"] is None
+    assert signals["asn_ip"] is None
+    assert signals["asn_country"] is None
+
